@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
+import { Shield, CheckCircle2 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Shield, CheckCircle2 } from "lucide-react"
 
 interface LeadFormProps {
   variant?: "hero" | "footer"
@@ -31,11 +32,15 @@ export function LeadForm({ variant = "hero" }: LeadFormProps) {
       const form = e.currentTarget
       const formData = new FormData(form)
 
-      await fetch("/__forms.html", {
+      const response = await fetch("/__forms.html", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams(formData as any).toString(),
       })
+
+      if (!response.ok) {
+        throw new Error(`Submission failed: ${response.status}`)
+      }
 
       setIsSubmitted(true)
       form.reset()
@@ -64,11 +69,14 @@ export function LeadForm({ variant = "hero" }: LeadFormProps) {
             <CheckCircle2 className="w-8 h-8 text-primary" />
           </div>
         </div>
+
         <h3 className="font-serif text-2xl font-semibold text-foreground mb-2">
           Thank You
         </h3>
+
         <p className="text-muted-foreground">
-          We&apos;ve received your information. A member of our team will contact you shortly for your confidential case review.
+          We&apos;ve received your information. A member of our team will contact
+          you shortly for your confidential case review.
         </p>
       </motion.div>
     )
@@ -94,10 +102,15 @@ export function LeadForm({ variant = "hero" }: LeadFormProps) {
 
       <form
         name="case-review"
+        method="POST"
+        action="/__forms.html"
+        data-netlify="true"
+        netlify-honeypot="bot-field"
         onSubmit={handleSubmit}
         className="space-y-4"
       >
         <input type="hidden" name="form-name" value="case-review" />
+        <input type="hidden" name="bot-field" />
         <input type="hidden" name="liability" value={liability} />
 
         <div className="space-y-2">
@@ -107,6 +120,7 @@ export function LeadForm({ variant = "hero" }: LeadFormProps) {
           <Input
             id="fullName"
             name="fullName"
+            type="text"
             placeholder="John Doe"
             required
             className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary/50 h-11"
@@ -158,24 +172,32 @@ export function LeadForm({ variant = "hero" }: LeadFormProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="yourInsurance" className="text-foreground/80 text-sm">
+            <Label
+              htmlFor="yourInsurance"
+              className="text-foreground/80 text-sm"
+            >
               Your Insurance Company
             </Label>
             <Input
               id="yourInsurance"
               name="yourInsurance"
+              type="text"
               placeholder="e.g., State Farm"
               className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary/50 h-11"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="otherInsurance" className="text-foreground/80 text-sm">
+            <Label
+              htmlFor="otherInsurance"
+              className="text-foreground/80 text-sm"
+            >
               Other Party&apos;s Insurance
             </Label>
             <Input
               id="otherInsurance"
               name="otherInsurance"
+              type="text"
               placeholder="e.g., Geico"
               className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary/50 h-11"
             />
@@ -183,9 +205,13 @@ export function LeadForm({ variant = "hero" }: LeadFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="liability-select" className="text-foreground/80 text-sm">
+          <Label
+            htmlFor="liability-select"
+            className="text-foreground/80 text-sm"
+          >
             Do You Believe You Were Liable?
           </Label>
+
           <Select value={liability} onValueChange={setLiability}>
             <SelectTrigger
               id="liability-select"
@@ -193,6 +219,7 @@ export function LeadForm({ variant = "hero" }: LeadFormProps) {
             >
               <SelectValue placeholder="Select an option" />
             </SelectTrigger>
+
             <SelectContent className="bg-card border-border">
               <SelectItem value="no">No</SelectItem>
               <SelectItem value="yes">Yes</SelectItem>
