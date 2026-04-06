@@ -21,16 +21,31 @@ interface LeadFormProps {
 export function LeadForm({ variant = "hero" }: LeadFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [liability, setLiability] = useState("")
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    try {
+      const form = e.currentTarget
+      const formData = new FormData(form)
 
-    setIsSubmitting(false)
-    setIsSubmitted(true)
+      await fetch("/__forms.html", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams(formData as any).toString(),
+      })
+
+      setIsSubmitted(true)
+      form.reset()
+      setLiability("")
+    } catch (error) {
+      console.error("Form submission error:", error)
+      alert("There was a problem submitting the form. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (isSubmitted) {
@@ -77,13 +92,21 @@ export function LeadForm({ variant = "hero" }: LeadFormProps) {
         </span>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form
+        name="case-review"
+        onSubmit={handleSubmit}
+        className="space-y-4"
+      >
+        <input type="hidden" name="form-name" value="case-review" />
+        <input type="hidden" name="liability" value={liability} />
+
         <div className="space-y-2">
           <Label htmlFor="fullName" className="text-foreground/80 text-sm">
             Full Name
           </Label>
           <Input
             id="fullName"
+            name="fullName"
             placeholder="John Doe"
             required
             className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary/50 h-11"
@@ -97,18 +120,21 @@ export function LeadForm({ variant = "hero" }: LeadFormProps) {
             </Label>
             <Input
               id="email"
+              name="email"
               type="email"
               placeholder="john@example.com"
               required
               className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary/50 h-11"
             />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="phone" className="text-foreground/80 text-sm">
               Phone Number
             </Label>
             <Input
               id="phone"
+              name="phone"
               type="tel"
               placeholder="(555) 123-4567"
               required
@@ -123,6 +149,7 @@ export function LeadForm({ variant = "hero" }: LeadFormProps) {
           </Label>
           <Input
             id="accidentDate"
+            name="accidentDate"
             type="date"
             required
             className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary/50 h-11"
@@ -131,27 +158,24 @@ export function LeadForm({ variant = "hero" }: LeadFormProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label
-              htmlFor="yourInsurance"
-              className="text-foreground/80 text-sm"
-            >
+            <Label htmlFor="yourInsurance" className="text-foreground/80 text-sm">
               Your Insurance Company
             </Label>
             <Input
               id="yourInsurance"
+              name="yourInsurance"
               placeholder="e.g., State Farm"
               className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary/50 h-11"
             />
           </div>
+
           <div className="space-y-2">
-            <Label
-              htmlFor="otherInsurance"
-              className="text-foreground/80 text-sm"
-            >
+            <Label htmlFor="otherInsurance" className="text-foreground/80 text-sm">
               Other Party&apos;s Insurance
             </Label>
             <Input
               id="otherInsurance"
+              name="otherInsurance"
               placeholder="e.g., Geico"
               className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary/50 h-11"
             />
@@ -159,11 +183,14 @@ export function LeadForm({ variant = "hero" }: LeadFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="liability" className="text-foreground/80 text-sm">
+          <Label htmlFor="liability-select" className="text-foreground/80 text-sm">
             Do You Believe You Were Liable?
           </Label>
-          <Select>
-            <SelectTrigger className="bg-input border-border text-foreground h-11">
+          <Select value={liability} onValueChange={setLiability}>
+            <SelectTrigger
+              id="liability-select"
+              className="bg-input border-border text-foreground h-11"
+            >
               <SelectValue placeholder="Select an option" />
             </SelectTrigger>
             <SelectContent className="bg-card border-border">
@@ -179,33 +206,7 @@ export function LeadForm({ variant = "hero" }: LeadFormProps) {
           disabled={isSubmitting}
           className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold h-12 text-base mt-2"
         >
-          {isSubmitting ? (
-            <span className="flex items-center gap-2">
-              <svg
-                className="animate-spin h-5 w-5"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              Processing...
-            </span>
-          ) : (
-            "Get My Free Case Review"
-          )}
+          {isSubmitting ? "Processing..." : "Get My Free Case Review"}
         </Button>
 
         <p className="text-xs text-muted-foreground text-center pt-2">
